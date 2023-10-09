@@ -69,6 +69,7 @@ ggsave(paste0(base_folder, "Role Title Access Plot.png"))
 
 # Recipes -----------------------------------------------
 # Apply a recipe that condenses infrequent data values into "other" categories
+access_train$ACTION <- as.factor(access_train$ACTION)
 access_recipe <- recipe(ACTION ~ ., data = access_train) |> 
   step_mutate_at(all_numeric_predictors(), fn = factor) |> # turns all numeric features into factors
   step_other(all_nominal_predictors(), threshold = 0.01) |> # condenses categorical values that are less than 1% into an "other" category
@@ -78,3 +79,23 @@ prepped_access_recipe <- prep(access_recipe)
 baked_access <- bake(prepped_access_recipe, new_data = access_train)
 glimpse(baked_access) # Check how many columns there are; should be 112
 
+
+
+# Logistic Regression Model -----------------------
+logistic_mod <- logistic_reg() |> set_engine("glm")
+
+logistic_amazon_wf <- workflow() |> 
+  add_recipe(access_recipe) |> 
+  add_model(logistic_mod) |> 
+  fit(data = access_train)
+
+logistic_amazon_pred <- predict(logistic_amazon_wf, 
+                                new_data = access_test,
+                                type = "prob")
+logistic_amazon_pred
+logistic_amazon_export <- data.frame("id" = 1:length(logistic_amazon_pred$.pred_1),
+                                     "Action" = logistic_amazon_pred$.pred_1)
+
+
+# Write the data
+vroom_write(logistic_amazon_export, paste0(base_folder, "logistic.csv"), delim = ",")
