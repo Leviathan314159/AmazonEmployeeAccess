@@ -6,6 +6,7 @@ library(tidymodels)
 library(vroom)
 library(ggmosaic)
 library(tidyverse)
+library(embed)
 
 # Read in the data -----------------------------------
 base_folder <- "C:/Users/BYU Rental/STAT348/AmazonEmployeeAccess/"
@@ -68,17 +69,28 @@ ggplot(data = access_explore) +
 ggsave(paste0(base_folder, "Role Title Access Plot.png"))
 
 # Recipes -----------------------------------------------
-# Apply a recipe that condenses infrequent data values into "other" categories
+# Make sure the response variable is categorical
 access_train$ACTION <- as.factor(access_train$ACTION)
+
+# Set the threshold percent to use for making a category "other"
+threshold_percent <- 0.001
+
+# Apply a recipe that condenses infrequent data values into "other" categories
 access_recipe <- recipe(ACTION ~ ., data = access_train) |> 
   step_mutate_at(all_numeric_predictors(), fn = factor) |> # turns all numeric features into factors
-  step_other(all_nominal_predictors(), threshold = 0.01) |> # condenses categorical values that are less than 1% into an "other" category
+  step_other(all_nominal_predictors(), threshold = threshold_percent) |> # condenses categorical values that are less than 1% into an "other" category
   step_dummy(all_nominal_predictors()) # encode to dummy variables
 
 prepped_access_recipe <- prep(access_recipe)
 baked_access <- bake(prepped_access_recipe, new_data = access_train)
 glimpse(baked_access) # Check how many columns there are; should be 112
 
+
+# Recipe for penalized logsitic regression
+penalized_logistic_recipe <- recipe(ACTION ~ ., data = access_train) |> 
+  step_mutate_at(all_numeric_predictors(), fn = factor) |> 
+  step_other(all_nominal_predictors(), threshold = threshold_percent) |> 
+  step_lencode_mixed(all_nominal_predictors(), outcome = vars(ACTION))
 
 
 # Logistic Regression Model -----------------------
@@ -96,6 +108,46 @@ logistic_amazon_pred
 logistic_amazon_export <- data.frame("id" = 1:length(logistic_amazon_pred$.pred_1),
                                      "Action" = logistic_amazon_pred$.pred_1)
 
+# Penalized Logistic Regression Model -----------------------
+penalized_logistic_mod <- logistic_reg(mixture = tune(), penalty = tune()) |> 
+  set_engine("glmnet")
 
-# Write the data
+penalized_amazon_wf <- workflow () |>
+  add_recipe(penalized_logistic_recipe) |> 
+  add_model(penalized_logistic_mod)
+
+# Set the tuning grid
+amazon_logistic_tuning_grid <- grid_regular(penalty(),
+                                            mixture(),
+                                            levels = 5)
+
+# Set up the CV
+penalized_amazon_folds <- vfold_cv(access_train, v = 10, repeats = 1)
+
+# Run the CV
+penalized_CV_results <- penalized_amazon_wf |> 
+  tune_grid(resamples = penalized_amazon_folds,
+            grid = amazon_logistic_tuning_grid,
+            metrics = metric_set(roc_auc)) #, f_meas, sens, recall, spec,
+                                 # precision, accuracy))
+
+# Find out the best tuning parameters
+best_tune <- penalized_CV_results |> select_best("roc_auc")
+best_tune
+
+# Use the best tuning parameters for the model
+final_penalized_wf <- penalized_amazon_wf |> 
+  finalize_workflow(best_tune) |> 
+  fit(data = access_train)
+
+# Predictions
+penalized_logistic_preds <- final_penalized_wf |> 
+  predict(new_data = access_test, type = "prob")
+
+# Prepare export
+penalized_export <- data.frame("id" = 1:length(penalized_logistic_preds$.pred_1),
+                               "Action" = penalized_logistic_preds$.pred_1)
+
+# Write the data ---------------------------------
 vroom_write(logistic_amazon_export, paste0(base_folder, "logistic.csv"), delim = ",")
+vroom_write(penalized_export, paste0(base_folder, "penalized_logistic.csv"), delim = ",")
