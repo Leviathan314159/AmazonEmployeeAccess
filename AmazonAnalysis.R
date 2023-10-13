@@ -4,7 +4,7 @@
 # Libraries -----------------------------------------------
 library(tidymodels)
 library(vroom)
-library(ggmosaic)
+# library(ggmosaic)
 library(tidyverse)
 library(embed)
 
@@ -17,58 +17,59 @@ glimpse(access_train)
 glimpse(access_test)
 
 # Exploratory Data Analysis --------------------------
-# Create dataset for exploration
-access_explore <- access_train
-access_explore$ACTION <- factor(access_explore$ACTION)
-glimpse(access_explore)
+# # Create dataset for exploration
+# access_explore <- access_train
+# access_explore$ACTION <- factor(access_explore$ACTION)
+# glimpse(access_explore)
+# 
+# # Write a function to assign any category with less than p% as "Other"
+# condense_as_other <- function(this_data, x, p){
+#   # This function condenses the column in this_data specified by "x" according to percent p.
+#   # Inputs:
+#   # this_data - a tibble
+#   # x - a string containing the name of the column you want to reference
+#   # p - a decimal representing the percent required to label a category as "other"
+#   #     (e.g. if p = 0.01, then any category with fewer than 1% of the total observations gets labeled as "Other")
+#   n <- length(this_data[[x]])
+#   resource_freq <- 1:n
+#   for (i in 1:n) {
+#     resource_freq[i] = sum(this_data[[x]][i] == this_data[[x]])/n
+#     if (resource_freq[i] < p) {
+#       this_data[[x]][i] = "Other"
+#     }
+#   }
+#   
+#   # Return the data
+#   this_data
+# }
+# 
+# # Condense all predictors
+# for (this_name in names(access_explore)[2:length(names(access_explore))]) {
+#   access_explore <- condense_as_other(access_explore, this_name, 0.01)
+# }
+# 
+# access_explore |> group_by(RESOURCE) |> summarize()
+# access_explore |> group_by(MGR_ID) |> summarize()
+# access_explore |> group_by(ROLE_ROLLUP_1) |> summarize()
+# access_explore |> group_by(ROLE_ROLLUP_2) |> summarize()
+# access_explore |> group_by(ROLE_DEPTNAME) |> summarize()
+# access_explore |> group_by(ROLE_TITLE) |> summarize()
+# access_explore |> group_by(ROLE_FAMILY_DESC) |> summarize()
+# access_explore |> group_by(ROLE_FAMILY) |> summarize()
+# access_explore |> group_by(ROLE_CODE) |> summarize()
+# 
+# # Plot access ACTION for various condensed predictors
+# # ROLE_DEPTNAME
+# ggplot(data = access_explore) + 
+#   geom_mosaic(mapping = aes(x = product(ROLE_DEPTNAME), fill = ACTION))
+# ggsave(paste0(base_folder, "Department Name Access Plot.png"))
+# # ROLE_TITLE
+# ggplot(data = access_explore) + 
+#   geom_mosaic(mapping = aes(x = product(ROLE_TITLE), fill = ACTION))
+# ggsave(paste0(base_folder, "Role Title Access Plot.png"))
 
-# Write a function to assign any category with less than p% as "Other"
-condense_as_other <- function(this_data, x, p){
-  # This function condenses the column in this_data specified by "x" according to percent p.
-  # Inputs:
-  # this_data - a tibble
-  # x - a string containing the name of the column you want to reference
-  # p - a decimal representing the percent required to label a category as "other"
-  #     (e.g. if p = 0.01, then any category with fewer than 1% of the total observations gets labeled as "Other")
-  n <- length(this_data[[x]])
-  resource_freq <- 1:n
-  for (i in 1:n) {
-    resource_freq[i] = sum(this_data[[x]][i] == this_data[[x]])/n
-    if (resource_freq[i] < p) {
-      this_data[[x]][i] = "Other"
-    }
-  }
-  
-  # Return the data
-  this_data
-}
+# Recipes ---------------------------------------
 
-# Condense all predictors
-for (this_name in names(access_explore)[2:length(names(access_explore))]) {
-  access_explore <- condense_as_other(access_explore, this_name, 0.01)
-}
-
-access_explore |> group_by(RESOURCE) |> summarize()
-access_explore |> group_by(MGR_ID) |> summarize()
-access_explore |> group_by(ROLE_ROLLUP_1) |> summarize()
-access_explore |> group_by(ROLE_ROLLUP_2) |> summarize()
-access_explore |> group_by(ROLE_DEPTNAME) |> summarize()
-access_explore |> group_by(ROLE_TITLE) |> summarize()
-access_explore |> group_by(ROLE_FAMILY_DESC) |> summarize()
-access_explore |> group_by(ROLE_FAMILY) |> summarize()
-access_explore |> group_by(ROLE_CODE) |> summarize()
-
-# Plot access ACTION for various condensed predictors
-# ROLE_DEPTNAME
-ggplot(data = access_explore) + 
-  geom_mosaic(mapping = aes(x = product(ROLE_DEPTNAME), fill = ACTION))
-ggsave(paste0(base_folder, "Department Name Access Plot.png"))
-# ROLE_TITLE
-ggplot(data = access_explore) + 
-  geom_mosaic(mapping = aes(x = product(ROLE_TITLE), fill = ACTION))
-ggsave(paste0(base_folder, "Role Title Access Plot.png"))
-
-# Recipes -----------------------------------------------
 # Make sure the response variable is categorical
 access_train$ACTION <- as.factor(access_train$ACTION)
 
