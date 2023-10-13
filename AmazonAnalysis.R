@@ -9,7 +9,7 @@ library(tidyverse)
 library(embed)
 
 # Read in the data -----------------------------------
-base_folder <- "C:/Users/BYU Rental/STAT348/AmazonEmployeeAccess/"
+base_folder <- "AmazonEmployeeAccess/"
 access_train <- vroom(paste0(base_folder, "train.csv"))
 access_test <- vroom(paste0(base_folder, "test.csv"))
 
