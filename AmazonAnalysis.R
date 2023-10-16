@@ -9,7 +9,7 @@ library(tidyverse)
 library(embed)
 library(ranger)
 
-# Read in the data -----------------------------------
+# Read in the data ------------------------------------
 base_folder <- "AmazonEmployeeAccess/"
 access_train <- vroom(paste0(base_folder, "train.csv"))
 access_test <- vroom(paste0(base_folder, "test.csv"))
@@ -199,8 +199,8 @@ forest_final_wf <- forest_amazon_wf |>
 forest_amazon_predictions <- predict(forest_final_wf, new_data = access_test)
 forest_amazon_predictions
 
-forest_export <- data.frame("id" = 1:length(forest_amazon_predictions$.pred_1),
-                               "Action" = forest_amazon_predictions$.pred_1)
+forest_export <- data.frame("id" = 1:length(forest_amazon_predictions$.pred_class),
+                               "Action" = forest_amazon_predictions$.pred_class)
 
 # Write the data ---------------------------------
 # vroom_write(logistic_amazon_export, paste0(base_folder, "logistic.csv"), delim = ",")
