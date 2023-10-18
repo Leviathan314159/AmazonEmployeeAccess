@@ -8,6 +8,7 @@ library(vroom)
 library(tidyverse)
 library(embed)
 library(ranger)
+library(discrim)
 
 # Read in the data ------------------------------------
 base_folder <- "AmazonEmployeeAccess/"
@@ -99,6 +100,12 @@ tree_recipe <- recipe(ACTION ~ ., data = access_train) |>
   step_mutate_at(all_numeric_predictors(), fn = factor) |> 
   step_other(all_nominal_predictors(), threshold = threshold_percent) # |> 
   # step_lencode_mixed(all_nominal_predictors(), outcome = vars(ACTION))
+
+# Recipe for Naive Bayes
+naive_recipe <- recipe(ACTION ~ ., data = access_train) |> 
+  step_mutate_at(all_numeric_predictors(), fn = factor) |> # turns all numeric features into factors
+  step_other(all_nominal_predictors(), threshold = threshold_percent) # condenses categorical values that are less than 1% into an "other" category
+  # step_dummy(all_nominal_predictors()) # encode to dummy variables
 
 # Logistic Regression Model -----------------------
 # logistic_mod <- logistic_reg() |> set_engine("glm")
@@ -202,7 +209,47 @@ forest_amazon_predictions
 forest_export <- data.frame("id" = 1:length(forest_amazon_predictions$.pred_class),
                                "Action" = forest_amazon_predictions$.pred_class)
 
+# Naive Bayes Method ------------------------
+
+# Set the model
+naive_model <- naive_Bayes(Laplace = tune(), smoothness = tune()) |> 
+  set_mode("classification") |> 
+  set_engine("naivebayes")
+
+# Set workflow
+naive_wf <- workflow() |> 
+  add_recipe(naive_recipe) |> 
+  add_model(naive_model)
+
+# Tuning
+# Set up the grid with the tuning values
+naive_grid <- grid_regular(Laplace(), smoothness())
+
+# Set up the K-fold CV
+naive_folds <- vfold_cv(data = access_train, v = 10, repeats = 1)
+
+# Find best tuning parameters
+naive_cv_results <- naive_wf |> 
+  tune_grid(resamples = naive_folds,
+            grid = naive_grid,
+            metrics = metric_set(roc_auc))
+
+# Select best tuning parameters
+naive_best_tune <- naive_cv_results |> select_best("roc_auc")
+naive_final_wf <- naive_wf |> 
+  finalize_workflow(naive_best_tune) |> 
+  fit(data = access_train)
+
+# Make predictions
+naive_predictions <- predict(naive_final_wf, new_data = access_test)
+naive_predictions
+
+# Prepare data for export
+naive_export <- data.frame("id" = 1:length(naive_predictions$.pred_class),
+                           "Action" = naive_predictions$.pred_class)
+
 # Write the data ---------------------------------
 # vroom_write(logistic_amazon_export, paste0(base_folder, "logistic.csv"), delim = ",")
 # vroom_write(penalized_export, paste0(base_folder, "penalized_logistic.csv"), delim = ",")
 vroom_write(forest_export, paste0(base_folder, "random_forest_classification.csv"), delim =",")
+vroom_write(naive_export, paste0(base_folder, "naive_bayes.csv"), delim = ",")
