@@ -107,6 +107,11 @@ naive_recipe <- recipe(ACTION ~ ., data = access_train) |>
   step_other(all_nominal_predictors(), threshold = threshold_percent) # condenses categorical values that are less than 1% into an "other" category
   # step_dummy(all_nominal_predictors()) # encode to dummy variables
 
+# Recipe for K Nearest Neighbors
+knn_recipe <- recipe(ACTION ~ ., data = access_train) |> 
+  step_mutate_at(all_numeric_predictors(), fn = factor) |> 
+  step_other(all_nominal_predictors(), threshold = threshold_percent)
+
 # Logistic Regression Model -----------------------
 # logistic_mod <- logistic_reg() |> set_engine("glm")
 # 
@@ -164,92 +169,123 @@ naive_recipe <- recipe(ACTION ~ ., data = access_train) |>
 # 
 # 
 # Random Forest (Classification) -----------------------------
-forest_amazon <- rand_forest(mtry = tune(),
-                             min_n = tune(),
-                             trees = 500) |> 
-  set_engine("ranger") |> 
-  set_mode("classification")
-
-# Create a workflow using the model and recipe
-forest_amazon_wf <- workflow() |> 
-  add_model(forest_amazon) |> 
-  add_recipe(tree_recipe)
-
-# Set up the grid with the tuning values
-forest_amazon_grid <- grid_regular(mtry(range = c(1, (length(access_train)-1))), min_n())
-
-# Set up the K-fold CV
-forest_amazon_folds <- vfold_cv(data = access_train, v = 10, repeats = 1)
-
-# Find best tuning parameters
-forest_cv_results <- forest_amazon_wf |> 
-  tune_grid(resamples = forest_amazon_folds,
-            grid = forest_amazon_grid,
-            metrics = metric_set(roc_auc))
-
-collect_metrics(forest_cv_results) |> 
-  filter(.metric == "rmse") %>% 
-  ggplot(data = ., aes(x = mtry, y = mean, color = factor(min_n))) + 
-  geom_point()
-
-# Finalize the workflow using the best tuning parameters and predict
-# The best parameters were mtry = 9 and min_n = 2
-
-# Find out the best tuning parameters
-best_forest_tune <- forest_cv_results |> select_best("roc_auc")
-
-# Use the best tuning parameters for the model
-forest_final_wf <- forest_amazon_wf |> 
-  finalize_workflow(best_forest_tune) |> 
-  fit(data = access_train)
-
-forest_amazon_predictions <- predict(forest_final_wf, new_data = access_test)
-forest_amazon_predictions
-
-forest_export <- data.frame("id" = 1:length(forest_amazon_predictions$.pred_class),
-                               "Action" = forest_amazon_predictions$.pred_class)
-
+# forest_amazon <- rand_forest(mtry = tune(),
+#                              min_n = tune(),
+#                              trees = 500) |> 
+#   set_engine("ranger") |> 
+#   set_mode("classification")
+# 
+# # Create a workflow using the model and recipe
+# forest_amazon_wf <- workflow() |> 
+#   add_model(forest_amazon) |> 
+#   add_recipe(tree_recipe)
+# 
+# # Set up the grid with the tuning values
+# forest_amazon_grid <- grid_regular(mtry(range = c(1, (length(access_train)-1))), min_n())
+# 
+# # Set up the K-fold CV
+# forest_amazon_folds <- vfold_cv(data = access_train, v = 10, repeats = 1)
+# 
+# # Find best tuning parameters
+# forest_cv_results <- forest_amazon_wf |> 
+#   tune_grid(resamples = forest_amazon_folds,
+#             grid = forest_amazon_grid,
+#             metrics = metric_set(roc_auc))
+# 
+# # Finalize the workflow using the best tuning parameters and predict
+# # The best parameters were mtry = 9 and min_n = 2
+# 
+# # Find out the best tuning parameters
+# best_forest_tune <- forest_cv_results |> select_best("roc_auc")
+# 
+# # Use the best tuning parameters for the model
+# forest_final_wf <- forest_amazon_wf |> 
+#   finalize_workflow(best_forest_tune) |> 
+#   fit(data = access_train)
+# 
+# forest_amazon_predictions <- predict(forest_final_wf, new_data = access_test)
+# forest_amazon_predictions
+# 
+# forest_export <- data.frame("id" = 1:length(forest_amazon_predictions$.pred_class),
+#                                "Action" = forest_amazon_predictions$.pred_class)
+# 
 # Naive Bayes Method ------------------------
 
 # Set the model
-naive_model <- naive_Bayes(Laplace = tune(), smoothness = tune()) |> 
+# naive_model <- naive_Bayes(Laplace = tune(), smoothness = tune()) |> 
+#   set_mode("classification") |> 
+#   set_engine("naivebayes")
+# 
+# # Set workflow
+# naive_wf <- workflow() |> 
+#   add_recipe(naive_recipe) |> 
+#   add_model(naive_model)
+# 
+# # Tuning
+# # Set up the grid with the tuning values
+# naive_grid <- grid_regular(Laplace(), smoothness())
+# 
+# # Set up the K-fold CV
+# naive_folds <- vfold_cv(data = access_train, v = 10, repeats = 1)
+# 
+# # Find best tuning parameters
+# naive_cv_results <- naive_wf |> 
+#   tune_grid(resamples = naive_folds,
+#             grid = naive_grid,
+#             metrics = metric_set(roc_auc))
+# 
+# # Select best tuning parameters
+# naive_best_tune <- naive_cv_results |> select_best("roc_auc")
+# naive_final_wf <- naive_wf |> 
+#   finalize_workflow(naive_best_tune) |> 
+#   fit(data = access_train)
+# 
+# # Make predictions
+# naive_predictions <- predict(naive_final_wf, new_data = access_test)
+# naive_predictions
+# 
+# # Prepare data for export
+# naive_export <- data.frame("id" = 1:length(naive_predictions$.pred_class),
+#                            "Action" = naive_predictions$.pred_class)
+# 
+# KNN --------------------------------------------
+knn_model <- nearest_neighbor(neighbors = tune()) |> 
   set_mode("classification") |> 
-  set_engine("naivebayes")
+  set_engine("kknn")
 
-# Set workflow
-naive_wf <- workflow() |> 
-  add_recipe(naive_recipe) |> 
-  add_model(naive_model)
+knn_wf <- workflow() |> 
+  add_recipe(knn_recipe) |> 
+  add_model(knn_model)
 
-# Tuning
-# Set up the grid with the tuning values
-naive_grid <- grid_regular(Laplace(), smoothness())
+# Set up the tuning grid
+knn_grid <- grid_regular(neighbors())
 
 # Set up the K-fold CV
-naive_folds <- vfold_cv(data = access_train, v = 10, repeats = 1)
+knn_folds <- vfold_cv(data = access_train, v = 5, repeats = 1)
 
 # Find best tuning parameters
-naive_cv_results <- naive_wf |> 
-  tune_grid(resamples = naive_folds,
-            grid = naive_grid,
+knn_cv_results <- knn_wf |> 
+  tune_grid(resamples = knn_folds,
+            grid = knn_grid,
             metrics = metric_set(roc_auc))
 
-# Select best tuning parameters
-naive_best_tune <- naive_cv_results |> select_best("roc_auc")
-naive_final_wf <- naive_wf |> 
-  finalize_workflow(naive_best_tune) |> 
+# Select best parameters for model
+knn_best_tune <- knn_cv_results |> select_best("roc_auc")
+knn_final_wf <- knn_wf |> 
+  finalize_workflow(knn_best_tune) |> 
   fit(data = access_train)
 
 # Make predictions
-naive_predictions <- predict(naive_final_wf, new_data = access_test)
-naive_predictions
+knn_predictions <- predict(knn_final_wf, new_data = access_test)
+knn_predictions
 
 # Prepare data for export
-naive_export <- data.frame("id" = 1:length(naive_predictions$.pred_class),
-                           "Action" = naive_predictions$.pred_class)
+knn_export <- data.frame("id" = 1:length(knn_predictions$.pred_class),
+                           "Action" = knn_predictions$.pred_class)
 
 # Write the data ---------------------------------
 # vroom_write(logistic_amazon_export, paste0(base_folder, "logistic.csv"), delim = ",")
 # vroom_write(penalized_export, paste0(base_folder, "penalized_logistic.csv"), delim = ",")
-vroom_write(forest_export, paste0(base_folder, "random_forest_classification.csv"), delim =",")
-vroom_write(naive_export, paste0(base_folder, "naive_bayes.csv"), delim = ",")
+# vroom_write(forest_export, paste0(base_folder, "random_forest_classification.csv"), delim =",")
+# vroom_write(naive_export, paste0(base_folder, "naive_bayes.csv"), delim = ",")
+vroom_write(knn_export, paste0(base_folder, "knn.csv"), delim = ",")
