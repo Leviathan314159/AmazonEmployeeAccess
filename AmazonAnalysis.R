@@ -110,7 +110,7 @@ naive_recipe <- recipe(ACTION ~ ., data = access_train) |>
 # Recipe for K Nearest Neighbors
 knn_recipe <- recipe(ACTION ~ ., data = access_train) |> 
   # step_other(all_numeric_predictors(), threshold = threshold_percent) |> 
-  step_lencode_mixed(all_numeric_predictors(), outcome = vars(ACTION)) |> 
+  step_lencode_mixed(all_nominal_predictors(), outcome = vars(ACTION)) |> 
   step_normalize(all_numeric_predictors())
 
 # Set the R^2 threshold for PCA
@@ -118,14 +118,12 @@ threshold_value <- 0.85
 
 # Principal Component Analysis Recipes
 pca_knn_recipe <- recipe(ACTION ~ ., data = access_train) |> 
-  step_mutate_at(all_numeric_predictors(), fn=factor) |> 
-  step_other(all_nominal_predictors(), threshold = threshold_percent) |> 
-  step_lencode_mixed(all_numeric_predictors(), outcome = vars(ACTION)) |> 
+  step_dummy(all_nominal_predictors()) |> 
   step_normalize(all_predictors()) |> 
   step_pca(all_predictors(), threshold = threshold_value)
+
 pca_naive_recipe <- recipe(ACTION ~ ., data = access_train) |> 
-  step_mutate_at(all_numeric_predictors(), fn = factor) |> 
-  step_other(all_nominal_predictors(), threshold = threshold_percent) |> 
+  step_dummy(all_nominal_predictors()) |> 
   step_normalize(all_predictors()) |> 
   step_pca(all_predictors(), threshold = threshold_value)
 
@@ -316,7 +314,7 @@ pca_knn_wf <- workflow() |>
 pca_knn_grid <- grid_regular(neighbors())
 
 # Set up the K-fold CV
-pca_knn_folds <- vfold_cv(data = access_train, v = 3, repeats = 1)
+pca_knn_folds <- vfold_cv(data = access_train, v = 5, repeats = 1)
 
 # Find best tuning parameters
 pca_knn_cv_results <- pca_knn_wf |> 
