@@ -316,7 +316,7 @@ pca_knn_wf <- workflow() |>
 pca_knn_grid <- grid_regular(neighbors())
 
 # Set up the K-fold CV
-pca_knn_folds <- vfold_cv(data = access_train, v = 5, repeats = 1)
+pca_knn_folds <- vfold_cv(data = access_train, v = 3, repeats = 1)
 
 # Find best tuning parameters
 pca_knn_cv_results <- pca_knn_wf |> 
