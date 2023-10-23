@@ -15,8 +15,8 @@ base_folder <- "AmazonEmployeeAccess/"
 access_train <- vroom(paste0(base_folder, "train.csv"))
 access_test <- vroom(paste0(base_folder, "test.csv"))
 
-# glimpse(access_train)
-# glimpse(access_test)
+glimpse(access_train)
+glimpse(access_test)
 
 # Exploratory Data Analysis --------------------------
 # # Create dataset for exploration
@@ -109,9 +109,25 @@ naive_recipe <- recipe(ACTION ~ ., data = access_train) |>
 
 # Recipe for K Nearest Neighbors
 knn_recipe <- recipe(ACTION ~ ., data = access_train) |> 
-  # step_mutate_at(all_numeric_predictors(), fn = factor) |> 
-  step_normalize(all_numeric_predictors()) |> 
-  step_other(all_nominal_predictors(), threshold = threshold_percent)
+  # step_other(all_numeric_predictors(), threshold = threshold_percent) |> 
+  step_lencode_mixed(all_numeric_predictors(), outcome = vars(ACTION)) |> 
+  step_normalize(all_numeric_predictors())
+
+# Set the R^2 threshold for PCA
+threshold_value <- 0.85
+
+# Principal Component Analysis Recipes
+pca_knn_recipe <- recipe(ACTION ~ ., data = access_train) |> 
+  step_mutate_at(all_numeric_predictors(), fn=factor) |> 
+  step_other(all_nominal_predictors(), threshold = threshold_percent) |> 
+  step_lencode_mixed(all_numeric_predictors(), outcome = vars(ACTION)) |> 
+  step_normalize(all_predictors()) |> 
+  step_pca(all_predictors(), threshold = threshold_value)
+pca_naive_recipe <- recipe(ACTION ~ ., data = access_train) |> 
+  step_mutate_at(all_numeric_predictors(), fn = factor) |> 
+  step_other(all_nominal_predictors(), threshold = threshold_percent) |> 
+  step_normalize(all_predictors()) |> 
+  step_pca(all_predictors(), threshold = threshold_value)
 
 # Logistic Regression Model -----------------------
 # logistic_mod <- logistic_reg() |> set_engine("glm")
@@ -250,43 +266,122 @@ knn_recipe <- recipe(ACTION ~ ., data = access_train) |>
 #                            "Action" = naive_predictions$.pred_class)
 # 
 # KNN --------------------------------------------
-knn_model <- nearest_neighbor(neighbors = tune()) |> 
+# knn_model <- nearest_neighbor(neighbors = tune()) |> 
+#   set_mode("classification") |> 
+#   set_engine("kknn")
+# 
+# knn_wf <- workflow() |> 
+#   add_recipe(knn_recipe) |> 
+#   add_model(knn_model)
+# 
+# # Set up the tuning grid
+# knn_grid <- grid_regular(neighbors())
+# 
+# # Set up the K-fold CV
+# knn_folds <- vfold_cv(data = access_train, v = 3, repeats = 1)
+# 
+# # Find best tuning parameters
+# knn_cv_results <- knn_wf |> 
+#   tune_grid(resamples = knn_folds,
+#             grid = knn_grid,
+#             metrics = metric_set(roc_auc))
+# 
+# # Select best parameters for model
+# knn_best_tune <- knn_cv_results |> select_best("roc_auc")
+# knn_final_wf <- knn_wf |> 
+#   finalize_workflow(knn_best_tune) |> 
+#   fit(data = access_train)
+# 
+# # Make predictions
+# knn_predictions <- predict(knn_final_wf, new_data = access_test)
+# knn_predictions
+# 
+# # Prepare data for export
+# knn_export <- data.frame("id" = 1:length(knn_predictions$.pred_class),
+#                            "Action" = knn_predictions$.pred_class)
+
+# PCA KNN--------------------------------------
+
+# Set the model
+pca_knn_model <- nearest_neighbor(neighbors = tune()) |> 
   set_mode("classification") |> 
   set_engine("kknn")
 
-knn_wf <- workflow() |> 
-  add_recipe(knn_recipe) |> 
-  add_model(knn_model)
+# Set the workflow
+pca_knn_wf <- workflow() |> 
+  add_recipe(pca_knn_recipe) |> 
+  add_model(pca_knn_model)
 
 # Set up the tuning grid
-knn_grid <- grid_regular(neighbors())
+pca_knn_grid <- grid_regular(neighbors())
 
 # Set up the K-fold CV
-knn_folds <- vfold_cv(data = access_train, v = 3, repeats = 1)
+pca_knn_folds <- vfold_cv(data = access_train, v = 5, repeats = 1)
 
 # Find best tuning parameters
-knn_cv_results <- knn_wf |> 
-  tune_grid(resamples = knn_folds,
-            grid = knn_grid,
+pca_knn_cv_results <- pca_knn_wf |> 
+  tune_grid(resamples = pca_knn_folds,
+            grid = pca_knn_grid,
             metrics = metric_set(roc_auc))
 
 # Select best parameters for model
-knn_best_tune <- knn_cv_results |> select_best("roc_auc")
-knn_final_wf <- knn_wf |> 
-  finalize_workflow(knn_best_tune) |> 
+pca_knn_best_tune <- pca_knn_cv_results |> select_best("roc_auc")
+pca_knn_final_wf <- pca_knn_wf |> 
+  finalize_workflow(pca_knn_best_tune) |> 
   fit(data = access_train)
 
 # Make predictions
-knn_predictions <- predict(knn_final_wf, new_data = access_test)
-knn_predictions
+pca_knn_predictions <- predict(pca_knn_final_wf, new_data = access_test)
+pca_knn_predictions
 
 # Prepare data for export
-knn_export <- data.frame("id" = 1:length(knn_predictions$.pred_class),
-                           "Action" = knn_predictions$.pred_class)
+pca_knn_export <- data.frame("id" = 1:length(pca_knn_predictions$.pred_class),
+                         "Action" = pca_knn_predictions$.pred_class)
+
+# PCA Naive Bayes ----------------------------------
+
+# Set the model
+pca_naive_model <- naive_Bayes(Laplace = tune(), smoothness = tune()) |>
+  set_mode("classification") |>
+  set_engine("naivebayes")
+
+# Set workflow
+pca_naive_wf <- workflow() |>
+  add_recipe(pca_naive_recipe) |>
+  add_model(pca_naive_model)
+
+# Tuning
+# Set up the grid with the tuning values
+pca_naive_grid <- grid_regular(Laplace(), smoothness())
+
+# Set up the K-fold CV
+pca_naive_folds <- vfold_cv(data = access_train, v = 10, repeats = 1)
+
+# Find best tuning parameters
+pca_naive_cv_results <- pca_naive_wf |>
+  tune_grid(resamples = pca_naive_folds,
+            grid = pca_naive_grid,
+            metrics = metric_set(roc_auc))
+
+# Select best tuning parameters
+pca_naive_best_tune <- pca_naive_cv_results |> select_best("roc_auc")
+pca_naive_final_wf <- pca_naive_wf |>
+  finalize_workflow(pca_naive_best_tune) |>
+  fit(data = access_train)
+
+# Make predictions
+pca_naive_predictions <- predict(pca_naive_final_wf, new_data = access_test)
+pca_naive_predictions
+
+# Prepare data for export
+pca_naive_export <- data.frame("id" = 1:length(pca_naive_predictions$.pred_class),
+                           "Action" = pca_naive_predictions$.pred_class)
 
 # Write the data ---------------------------------
 # vroom_write(logistic_amazon_export, paste0(base_folder, "logistic.csv"), delim = ",")
 # vroom_write(penalized_export, paste0(base_folder, "penalized_logistic.csv"), delim = ",")
 # vroom_write(forest_export, paste0(base_folder, "random_forest_classification.csv"), delim =",")
 # vroom_write(naive_export, paste0(base_folder, "naive_bayes.csv"), delim = ",")
-vroom_write(knn_export, paste0(base_folder, "knn.csv"), delim = ",")
+# vroom_write(knn_export, paste0(base_folder, "knn.csv"), delim = ",")
+vroom_write(pca_knn_export, paste0(base_folder, "pca_knn.csv"), delim = ",")
+vroom_write(pca_naive_export, paste0(base_folder, "pca_naive.csv"), delim = ",")
