@@ -114,7 +114,7 @@ knn_recipe <- recipe(ACTION ~ ., data = access_train) |>
   step_normalize(all_numeric_predictors())
 
 # Set the R^2 threshold for PCA
-threshold_value <- 0.85
+threshold_value <- 0.75
 
 # Principal Component Analysis Recipes
 pca_knn_recipe <- recipe(ACTION ~ ., data = access_train) |> 
