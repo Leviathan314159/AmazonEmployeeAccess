@@ -192,198 +192,198 @@ svm_recipe <- recipe(ACTION ~ ., data = access_train) |>
 # 
 # 
 # Random Forest (Classification) -----------------------------
-# forest_amazon <- rand_forest(mtry = tune(),
-#                              min_n = tune(),
-#                              trees = 500) |>
-#   set_engine("ranger") |>
-#   set_mode("classification")
-# 
-# # Create a workflow using the model and recipe
-# forest_amazon_wf <- workflow() |>
-#   add_model(forest_amazon) |>
-#   add_recipe(tree_recipe)
-# 
-# # Set up the grid with the tuning values
-# forest_amazon_grid <- grid_regular(mtry(range = c(1, (length(access_train)-1))), min_n())
-# 
-# # Set up the K-fold CV
-# forest_amazon_folds <- vfold_cv(data = access_train, v = 10, repeats = 1)
-# 
-# # Find best tuning parameters
-# forest_cv_results <- forest_amazon_wf |>
-#   tune_grid(resamples = forest_amazon_folds,
-#             grid = forest_amazon_grid,
-#             metrics = metric_set(roc_auc))
-# 
-# # Finalize the workflow using the best tuning parameters and predict
-# # The best parameters were mtry = 9 and min_n = 2
-# 
-# # Find out the best tuning parameters
-# best_forest_tune <- forest_cv_results |> select_best("roc_auc")
-# 
-# # Use the best tuning parameters for the model
-# forest_final_wf <- forest_amazon_wf |>
-#   finalize_workflow(best_forest_tune) |>
-#   fit(data = access_train)
-# 
-# forest_amazon_predictions <- predict(forest_final_wf,
-#                                      new_data = access_test,
-#                                      type = "prob")
-# forest_amazon_predictions
-# 
-# forest_export <- data.frame("id" = 1:length(forest_amazon_predictions$.pred_1),
-#                                "Action" = forest_amazon_predictions$.pred_1)
+forest_amazon <- rand_forest(mtry = tune(),
+                             min_n = tune(),
+                             trees = 500) |>
+  set_engine("ranger") |>
+  set_mode("classification")
+
+# Create a workflow using the model and recipe
+forest_amazon_wf <- workflow() |>
+  add_model(forest_amazon) |>
+  add_recipe(tree_recipe)
+
+# Set up the grid with the tuning values
+forest_amazon_grid <- grid_regular(mtry(range = c(1, (length(access_train)-1))), min_n())
+
+# Set up the K-fold CV
+forest_amazon_folds <- vfold_cv(data = access_train, v = 10, repeats = 1)
+
+# Find best tuning parameters
+forest_cv_results <- forest_amazon_wf |>
+  tune_grid(resamples = forest_amazon_folds,
+            grid = forest_amazon_grid,
+            metrics = metric_set(roc_auc))
+
+# Finalize the workflow using the best tuning parameters and predict
+# The best parameters were mtry = 9 and min_n = 2
+
+# Find out the best tuning parameters
+best_forest_tune <- forest_cv_results |> select_best("roc_auc")
+
+# Use the best tuning parameters for the model
+forest_final_wf <- forest_amazon_wf |>
+  finalize_workflow(best_forest_tune) |>
+  fit(data = access_train)
+
+forest_amazon_predictions <- predict(forest_final_wf,
+                                     new_data = access_test,
+                                     type = "prob")
+forest_amazon_predictions
+
+forest_export <- data.frame("id" = 1:length(forest_amazon_predictions$.pred_1),
+                               "Action" = forest_amazon_predictions$.pred_1)
 
 # Naive Bayes Method ------------------------
-# 
-# # Set the model
-# naive_model <- naive_Bayes(Laplace = tune(), smoothness = tune()) |>
-#   set_mode("classification") |>
-#   set_engine("naivebayes")
-# 
-# # Set workflow
-# naive_wf <- workflow() |>
-#   add_recipe(naive_recipe) |>
-#   add_model(naive_model)
-# 
-# # Tuning
-# # Set up the grid with the tuning values
-# naive_grid <- grid_regular(Laplace(), smoothness())
-# 
-# # Set up the K-fold CV
-# naive_folds <- vfold_cv(data = access_train, v = 10, repeats = 1)
-# 
-# # Find best tuning parameters
-# naive_cv_results <- naive_wf |>
-#   tune_grid(resamples = naive_folds,
-#             grid = naive_grid,
-#             metrics = metric_set(roc_auc))
-# 
-# # Select best tuning parameters
-# naive_best_tune <- naive_cv_results |> select_best("roc_auc")
-# naive_final_wf <- naive_wf |>
-#   finalize_workflow(naive_best_tune) |>
-#   fit(data = access_train)
-# 
-# # Make predictions
-# naive_predictions <- predict(naive_final_wf, new_data = access_test, type = "prob")
-# naive_predictions
-# 
-# # Prepare data for export
-# naive_export <- data.frame("id" = 1:length(naive_predictions$.pred_1),
-#                            "Action" = naive_predictions$.pred_1)
+
+# Set the model
+naive_model <- naive_Bayes(Laplace = tune(), smoothness = tune()) |>
+  set_mode("classification") |>
+  set_engine("naivebayes")
+
+# Set workflow
+naive_wf <- workflow() |>
+  add_recipe(naive_recipe) |>
+  add_model(naive_model)
+
+# Tuning
+# Set up the grid with the tuning values
+naive_grid <- grid_regular(Laplace(), smoothness())
+
+# Set up the K-fold CV
+naive_folds <- vfold_cv(data = access_train, v = 10, repeats = 1)
+
+# Find best tuning parameters
+naive_cv_results <- naive_wf |>
+  tune_grid(resamples = naive_folds,
+            grid = naive_grid,
+            metrics = metric_set(roc_auc))
+
+# Select best tuning parameters
+naive_best_tune <- naive_cv_results |> select_best("roc_auc")
+naive_final_wf <- naive_wf |>
+  finalize_workflow(naive_best_tune) |>
+  fit(data = access_train)
+
+# Make predictions
+naive_predictions <- predict(naive_final_wf, new_data = access_test, type = "prob")
+naive_predictions
+
+# Prepare data for export
+naive_export <- data.frame("id" = 1:length(naive_predictions$.pred_1),
+                           "Action" = naive_predictions$.pred_1)
 
 # KNN --------------------------------------------
-# knn_model <- nearest_neighbor(neighbors = tune()) |>
-#   set_mode("classification") |>
-#   set_engine("kknn")
-# 
-# knn_wf <- workflow() |>
-#   add_recipe(knn_recipe) |>
-#   add_model(knn_model)
-# 
-# # Set up the tuning grid
-# knn_grid <- grid_regular(neighbors())
-# 
-# # Set up the K-fold CV
-# knn_folds <- vfold_cv(data = access_train, v = 3, repeats = 1)
-# 
-# # Find best tuning parameters
-# knn_cv_results <- knn_wf |>
-#   tune_grid(resamples = knn_folds,
-#             grid = knn_grid,
-#             metrics = metric_set(roc_auc))
-# 
-# # Select best parameters for model
-# knn_best_tune <- knn_cv_results |> select_best("roc_auc")
-# knn_final_wf <- knn_wf |>
-#   finalize_workflow(knn_best_tune) |>
-#   fit(data = access_train)
-# 
-# # Make predictions
-# knn_predictions <- predict(knn_final_wf, new_data = access_test, type = "prob")
-# knn_predictions
-# 
-# # Prepare data for export
-# knn_export <- data.frame("id" = 1:length(knn_predictions$.pred_1),
-#                            "Action" = knn_predictions$.pred_1)
+knn_model <- nearest_neighbor(neighbors = tune()) |>
+  set_mode("classification") |>
+  set_engine("kknn")
+
+knn_wf <- workflow() |>
+  add_recipe(knn_recipe) |>
+  add_model(knn_model)
+
+# Set up the tuning grid
+knn_grid <- grid_regular(neighbors())
+
+# Set up the K-fold CV
+knn_folds <- vfold_cv(data = access_train, v = 10, repeats = 1)
+
+# Find best tuning parameters
+knn_cv_results <- knn_wf |>
+  tune_grid(resamples = knn_folds,
+            grid = knn_grid,
+            metrics = metric_set(roc_auc))
+
+# Select best parameters for model
+knn_best_tune <- knn_cv_results |> select_best("roc_auc")
+knn_final_wf <- knn_wf |>
+  finalize_workflow(knn_best_tune) |>
+  fit(data = access_train)
+
+# Make predictions
+knn_predictions <- predict(knn_final_wf, new_data = access_test, type = "prob")
+knn_predictions
+
+# Prepare data for export
+knn_export <- data.frame("id" = 1:length(knn_predictions$.pred_1),
+                           "Action" = knn_predictions$.pred_1)
 
 # PCA KNN--------------------------------------
-# 
-# # Set the model
-# pca_knn_model <- nearest_neighbor(neighbors = tune()) |> 
-#   set_mode("classification") |> 
-#   set_engine("kknn")
-# 
-# # Set the workflow
-# pca_knn_wf <- workflow() |> 
-#   add_recipe(pca_knn_recipe) |> 
-#   add_model(pca_knn_model)
-# 
-# # Set up the tuning grid
-# pca_knn_grid <- grid_regular(neighbors())
-# 
-# # Set up the K-fold CV
-# pca_knn_folds <- vfold_cv(data = access_train, v = 10, repeats = 1)
-# 
-# # Find best tuning parameters
-# pca_knn_cv_results <- pca_knn_wf |> 
-#   tune_grid(resamples = pca_knn_folds,
-#             grid = pca_knn_grid,
-#             metrics = metric_set(roc_auc))
-# 
-# # Select best parameters for model
-# pca_knn_best_tune <- pca_knn_cv_results |> select_best("roc_auc")
-# pca_knn_final_wf <- pca_knn_wf |> 
-#   finalize_workflow(pca_knn_best_tune) |> 
-#   fit(data = access_train)
-# 
-# # Make predictions
-# pca_knn_predictions <- predict(pca_knn_final_wf, new_data = access_test, type = "prob")
-# pca_knn_predictions
-# 
-# # Prepare data for export
-# pca_knn_export <- data.frame("id" = 1:length(pca_knn_predictions$.pred_1),
-#                          "Action" = pca_knn_predictions$.pred_1)
+
+# Set the model
+pca_knn_model <- nearest_neighbor(neighbors = tune()) |>
+  set_mode("classification") |>
+  set_engine("kknn")
+
+# Set the workflow
+pca_knn_wf <- workflow() |>
+  add_recipe(pca_knn_recipe) |>
+  add_model(pca_knn_model)
+
+# Set up the tuning grid
+pca_knn_grid <- grid_regular(neighbors())
+
+# Set up the K-fold CV
+pca_knn_folds <- vfold_cv(data = access_train, v = 10, repeats = 1)
+
+# Find best tuning parameters
+pca_knn_cv_results <- pca_knn_wf |>
+  tune_grid(resamples = pca_knn_folds,
+            grid = pca_knn_grid,
+            metrics = metric_set(roc_auc))
+
+# Select best parameters for model
+pca_knn_best_tune <- pca_knn_cv_results |> select_best("roc_auc")
+pca_knn_final_wf <- pca_knn_wf |>
+  finalize_workflow(pca_knn_best_tune) |>
+  fit(data = access_train)
+
+# Make predictions
+pca_knn_predictions <- predict(pca_knn_final_wf, new_data = access_test, type = "prob")
+pca_knn_predictions
+
+# Prepare data for export
+pca_knn_export <- data.frame("id" = 1:length(pca_knn_predictions$.pred_1),
+                         "Action" = pca_knn_predictions$.pred_1)
 
 # PCA Naive Bayes ----------------------------------
-# 
-# # Set the model
-# pca_naive_model <- naive_Bayes(Laplace = tune(), smoothness = tune()) |>
-#   set_mode("classification") |>
-#   set_engine("naivebayes")
-# 
-# # Set workflow
-# pca_naive_wf <- workflow() |>
-#   add_recipe(pca_naive_recipe) |>
-#   add_model(pca_naive_model)
-# 
-# # Tuning
-# # Set up the grid with the tuning values
-# pca_naive_grid <- grid_regular(Laplace(), smoothness())
-# 
-# # Set up the K-fold CV
-# pca_naive_folds <- vfold_cv(data = access_train, v = 10, repeats = 1)
-# 
-# # Find best tuning parameters
-# pca_naive_cv_results <- pca_naive_wf |>
-#   tune_grid(resamples = pca_naive_folds,
-#             grid = pca_naive_grid,
-#             metrics = metric_set(roc_auc))
-# 
-# # Select best tuning parameters
-# pca_naive_best_tune <- pca_naive_cv_results |> select_best("roc_auc")
-# pca_naive_final_wf <- pca_naive_wf |>
-#   finalize_workflow(pca_naive_best_tune) |>
-#   fit(data = access_train)
-# 
-# # Make predictions
-# pca_naive_predictions <- predict(pca_naive_final_wf, new_data = access_test, type = "prob")
-# pca_naive_predictions
-# 
-# # Prepare data for export
-# pca_naive_export <- data.frame("id" = 1:length(pca_naive_predictions$.pred_1),
-#                            "Action" = pca_naive_predictions$.pred_1)
+
+# Set the model
+pca_naive_model <- naive_Bayes(Laplace = tune(), smoothness = tune()) |>
+  set_mode("classification") |>
+  set_engine("naivebayes")
+
+# Set workflow
+pca_naive_wf <- workflow() |>
+  add_recipe(pca_naive_recipe) |>
+  add_model(pca_naive_model)
+
+# Tuning
+# Set up the grid with the tuning values
+pca_naive_grid <- grid_regular(Laplace(), smoothness())
+
+# Set up the K-fold CV
+pca_naive_folds <- vfold_cv(data = access_train, v = 10, repeats = 1)
+
+# Find best tuning parameters
+pca_naive_cv_results <- pca_naive_wf |>
+  tune_grid(resamples = pca_naive_folds,
+            grid = pca_naive_grid,
+            metrics = metric_set(roc_auc))
+
+# Select best tuning parameters
+pca_naive_best_tune <- pca_naive_cv_results |> select_best("roc_auc")
+pca_naive_final_wf <- pca_naive_wf |>
+  finalize_workflow(pca_naive_best_tune) |>
+  fit(data = access_train)
+
+# Make predictions
+pca_naive_predictions <- predict(pca_naive_final_wf, new_data = access_test, type = "prob")
+pca_naive_predictions
+
+# Prepare data for export
+pca_naive_export <- data.frame("id" = 1:length(pca_naive_predictions$.pred_1),
+                           "Action" = pca_naive_predictions$.pred_1)
 
 # SVM ------------------------------------------------
 
@@ -432,4 +432,4 @@ vroom_write(naive_export, paste0(base_folder, "naive_bayes.csv"), delim = ",")
 vroom_write(knn_export, paste0(base_folder, "knn.csv"), delim = ",")
 vroom_write(pca_knn_export, paste0(base_folder, "pca_knn.csv"), delim = ",")
 vroom_write(pca_naive_export, paste0(base_folder, "pca_naive.csv"), delim = ",")
-# vroom_write(svm_export, paste0(base_folder, "svm.csv"), delim = ",")
+vroom_write(svm_export, paste0(base_folder, "svm.csv"), delim = ",")
