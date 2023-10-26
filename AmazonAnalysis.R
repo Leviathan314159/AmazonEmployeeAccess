@@ -231,8 +231,8 @@ svm_recipe <- recipe(ACTION ~ ., data = access_train) |>
 #                                      type = "prob")
 # forest_amazon_predictions
 # 
-# forest_export <- data.frame("id" = 1:length(forest_amazon_predictions$.pred_class),
-#                                "Action" = forest_amazon_predictions$.pred_class)
+# forest_export <- data.frame("id" = 1:length(forest_amazon_predictions$.pred_1),
+#                                "Action" = forest_amazon_predictions$.pred_1)
 
 # Naive Bayes Method ------------------------
 # 
@@ -270,8 +270,8 @@ svm_recipe <- recipe(ACTION ~ ., data = access_train) |>
 # naive_predictions
 # 
 # # Prepare data for export
-# naive_export <- data.frame("id" = 1:length(naive_predictions$.pred_class),
-#                            "Action" = naive_predictions$.pred_class)
+# naive_export <- data.frame("id" = 1:length(naive_predictions$.pred_1),
+#                            "Action" = naive_predictions$.pred_1)
 
 # KNN --------------------------------------------
 # knn_model <- nearest_neighbor(neighbors = tune()) |>
@@ -305,8 +305,8 @@ svm_recipe <- recipe(ACTION ~ ., data = access_train) |>
 # knn_predictions
 # 
 # # Prepare data for export
-# knn_export <- data.frame("id" = 1:length(knn_predictions$.pred_class),
-#                            "Action" = knn_predictions$.pred_class)
+# knn_export <- data.frame("id" = 1:length(knn_predictions$.pred_1),
+#                            "Action" = knn_predictions$.pred_1)
 
 # PCA KNN--------------------------------------
 # 
@@ -343,8 +343,8 @@ svm_recipe <- recipe(ACTION ~ ., data = access_train) |>
 # pca_knn_predictions
 # 
 # # Prepare data for export
-# pca_knn_export <- data.frame("id" = 1:length(pca_knn_predictions$.pred_class),
-#                          "Action" = pca_knn_predictions$.pred_class)
+# pca_knn_export <- data.frame("id" = 1:length(pca_knn_predictions$.pred_1),
+#                          "Action" = pca_knn_predictions$.pred_1)
 
 # PCA Naive Bayes ----------------------------------
 # 
@@ -382,8 +382,8 @@ svm_recipe <- recipe(ACTION ~ ., data = access_train) |>
 # pca_naive_predictions
 # 
 # # Prepare data for export
-# pca_naive_export <- data.frame("id" = 1:length(pca_naive_predictions$.pred_class),
-#                            "Action" = pca_naive_predictions$.pred_class)
+# pca_naive_export <- data.frame("id" = 1:length(pca_naive_predictions$.pred_1),
+#                            "Action" = pca_naive_predictions$.pred_1)
 
 # SVM ------------------------------------------------
 
@@ -421,8 +421,8 @@ svm_predictions <- predict(svm_final_wf, new_data = access_test, type = "prob")
 svm_predictions
 
 # Prepare data for export
-svm_export <- data.frame("id" = 1:length(svm_predictions$.pred_class),
-                               "Action" = svm_predictions$.pred_class)
+svm_export <- data.frame("id" = 1:length(svm_predictions$.pred_1),
+                               "Action" = svm_predictions$.pred_1)
 
 # Write the data ---------------------------------
 # vroom_write(logistic_amazon_export, paste0(base_folder, "logistic.csv"), delim = ",")
