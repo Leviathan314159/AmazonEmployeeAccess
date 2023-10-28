@@ -1,6 +1,11 @@
 # This file is for the Amazon Employee Access Kaggle competition.
 # This is the primary analysis file
 
+# Notes:
+# Waiting to save files until the very end of the script isn't a great idea.
+# It wastes computation time because if I run into an error, I have to rerun
+# the whole script rather than just the portion that had the error.
+
 # Libraries -----------------------------------------------
 library(tidymodels)
 library(vroom)
@@ -166,6 +171,9 @@ logistic_amazon_pred
 logistic_amazon_export <- data.frame("id" = 1:length(logistic_amazon_pred$.pred_1),
                                      "Action" = logistic_amazon_pred$.pred_1)
 
+# Write the data
+vroom_write(logistic_amazon_export, paste0(base_folder, "logistic.csv"), delim = ",")
+
 # Penalized Logistic Regression Model -----------------------
 penalized_logistic_mod <- logistic_reg(mixture = tune(), penalty = tune()) |>
   set_engine("glmnet")
@@ -206,6 +214,8 @@ penalized_logistic_preds <- final_penalized_wf |>
 penalized_export <- data.frame("id" = 1:length(penalized_logistic_preds$.pred_1),
                                "Action" = penalized_logistic_preds$.pred_1)
 
+# Write the data
+vroom_write(penalized_export, paste0(base_folder, "penalized_logistic.csv"), delim = ",")
 
 # Random Forest (Classification) -----------------------------
 forest_amazon <- rand_forest(mtry = tune(),
@@ -250,6 +260,9 @@ forest_amazon_predictions
 forest_export <- data.frame("id" = 1:length(forest_amazon_predictions$.pred_1),
                                "Action" = forest_amazon_predictions$.pred_1)
 
+# Write the data
+vroom_write(forest_export, paste0(base_folder, "random_forest_classification.csv"), delim =",")
+
 # Naive Bayes Method ------------------------
 
 # Set the model
@@ -289,6 +302,9 @@ naive_predictions
 naive_export <- data.frame("id" = 1:length(naive_predictions$.pred_1),
                            "Action" = naive_predictions$.pred_1)
 
+# Write the data
+vroom_write(naive_export, paste0(base_folder, "naive_bayes.csv"), delim = ",")
+
 # KNN --------------------------------------------
 knn_model <- nearest_neighbor(neighbors = tune()) |>
   set_mode("classification") |>
@@ -323,6 +339,9 @@ knn_predictions
 # Prepare data for export
 knn_export <- data.frame("id" = 1:length(knn_predictions$.pred_1),
                            "Action" = knn_predictions$.pred_1)
+
+# Write the data
+vroom_write(knn_export, paste0(base_folder, "knn.csv"), delim = ",")
 
 # PCA KNN--------------------------------------
 
@@ -361,6 +380,9 @@ pca_knn_predictions
 # Prepare data for export
 pca_knn_export <- data.frame("id" = 1:length(pca_knn_predictions$.pred_1),
                          "Action" = pca_knn_predictions$.pred_1)
+
+# Write the data
+vroom_write(pca_knn_export, paste0(base_folder, "pca_knn.csv"), delim = ",")
 
 # PCA Naive Bayes ----------------------------------
 
@@ -401,6 +423,9 @@ pca_naive_predictions
 pca_naive_export <- data.frame("id" = 1:length(pca_naive_predictions$.pred_1),
                            "Action" = pca_naive_predictions$.pred_1)
 
+# Write the data
+vroom_write(pca_naive_export, paste0(base_folder, "pca_naive.csv"), delim = ",")
+
 # SVM ------------------------------------------------
 
 # Set the model
@@ -440,12 +465,5 @@ svm_predictions
 svm_export <- data.frame("id" = 1:length(svm_predictions$.pred_1),
                                "Action" = svm_predictions$.pred_1)
 
-# Write the data ---------------------------------
-vroom_write(logistic_amazon_export, paste0(base_folder, "logistic.csv"), delim = ",")
-vroom_write(penalized_export, paste0(base_folder, "penalized_logistic.csv"), delim = ",")
-vroom_write(forest_export, paste0(base_folder, "random_forest_classification.csv"), delim =",")
-vroom_write(naive_export, paste0(base_folder, "naive_bayes.csv"), delim = ",")
-vroom_write(knn_export, paste0(base_folder, "knn.csv"), delim = ",")
-vroom_write(pca_knn_export, paste0(base_folder, "pca_knn.csv"), delim = ",")
-vroom_write(pca_naive_export, paste0(base_folder, "pca_naive.csv"), delim = ",")
+# Write the data
 vroom_write(svm_export, paste0(base_folder, "svm.csv"), delim = ",")
