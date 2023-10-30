@@ -92,6 +92,7 @@ access_recipe <- recipe(ACTION ~ ., data = access_train) |>
   step_mutate_at(all_numeric_predictors(), fn = factor) |> # turns all numeric features into factors
   step_other(all_nominal_predictors(), threshold = threshold_percent) |> # condenses categorical values that are less than 1% into an "other" category
   step_lencode_mixed(all_nominal_predictors(), outcome = vars(ACTION)) |> 
+  step_normalize(all_numeric_predictors()) |> 
   step_smote(all_outcomes(), neighbors = smote_neighbors)
 
 # prepped_access_recipe <- prep(access_recipe)
@@ -104,12 +105,14 @@ penalized_logistic_recipe <- recipe(ACTION ~ ., data = access_train) |>
   step_mutate_at(all_numeric_predictors(), fn = factor) |> 
   step_other(all_nominal_predictors(), threshold = threshold_percent) |> 
   step_lencode_mixed(all_nominal_predictors(), outcome = vars(ACTION)) |> 
+  step_normalize(all_numeric_predictors()) |> 
   step_smote(all_outcomes(), neighbors = smote_neighbors)
 
 # Recipe for random forest
 tree_recipe <- recipe(ACTION ~ ., data = access_train) |> 
   step_mutate_at(all_numeric_predictors(), fn = factor) |> 
   step_lencode_mixed(all_nominal_predictors(), outcome = vars(ACTION)) |> 
+  step_normalize(all_numeric_predictors()) |> 
   step_smote(all_outcomes(), neighbors = smote_neighbors)
 
 # Recipe for Naive Bayes
@@ -117,6 +120,7 @@ naive_recipe <- recipe(ACTION ~ ., data = access_train) |>
   step_mutate_at(all_numeric_predictors(), fn = factor) |> # turns all numeric features into factors
   step_other(all_nominal_predictors(), threshold = threshold_percent) |> # condenses categorical values that are less than 1% into an "other" category
   step_lencode_mixed(all_nominal_predictors(), outcome = vars(ACTION)) |> 
+  step_normalize(all_numeric_predictors()) |> 
   step_smote(all_outcomes(), neighbors = smote_neighbors)
 
 # Recipe for K Nearest Neighbors
@@ -124,6 +128,7 @@ knn_recipe <- recipe(ACTION ~ ., data = access_train) |>
   step_mutate_at(all_numeric_predictors(), fn = factor) |> 
   step_other(all_nominal_predictors(), threshold = threshold_percent) |> 
   step_lencode_mixed(all_nominal_predictors(), outcome = vars(ACTION)) |> 
+  step_normalize(all_numeric_predictors()) |> 
   step_smote(all_outcomes(), neighbors = smote_neighbors)
 
 # Set the R^2 threshold for PCA
