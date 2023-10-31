@@ -112,8 +112,8 @@ penalized_logistic_recipe <- recipe(ACTION ~ ., data = access_train) |>
 tree_recipe <- recipe(ACTION ~ ., data = access_train) |> 
   step_mutate_at(all_numeric_predictors(), fn = factor) |> 
   step_lencode_mixed(all_nominal_predictors(), outcome = vars(ACTION)) |> 
-  step_normalize(all_numeric_predictors()) |> 
-  step_smote(all_outcomes(), neighbors = smote_neighbors)
+  # step_normalize(all_numeric_predictors()) |> 
+  # step_smote(all_outcomes(), neighbors = smote_neighbors)
 
 # Recipe for Naive Bayes
 naive_recipe <- recipe(ACTION ~ ., data = access_train) |> 
